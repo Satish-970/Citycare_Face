@@ -1,0 +1,139 @@
+<div class="fade-in-up">
+  <div class="page-header">
+    <h2>Clinical Dashboard</h2>
+    <p>Manage patients and treatments</p>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#dbeafe;color:#1d4ed8"><i class="bi bi-people"></i></div>
+        <div><div class="metric-label">Total Patients</div><div class="metric-value">{{patients().length}}</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#fee2e2;color:#dc2626"><i class="bi bi-heart-pulse"></i></div>
+        <div><div class="metric-label">Critical</div><div class="metric-value">{{criticalCount}}</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#d1fae5;color:#065f46"><i class="bi bi-clipboard2-pulse"></i></div>
+        <div><div class="metric-label">My Treatments</div><div class="metric-value">{{myTreatments().length}}</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#fef3c7;color:#92400e"><i class="bi bi-person-check"></i></div>
+        <div><div class="metric-label">Admitted</div><div class="metric-value">{{admittedCount}}</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <!-- Patients list -->
+    <div class="col-lg-7">
+      <div class="section-card">
+        <div class="section-card-title d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-people me-2 text-primary-cc"></i>Patients</span>
+          <button class="btn btn-sm btn-outline-secondary" (click)="loadAll()"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+        @if (loading()) {
+          <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary-cc"></div></div>
+        } @else if (patients().length === 0) {
+          <div class="text-center py-4 text-muted">No patients found.</div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Patient ID</th><th>Citizen ID</th><th>Name</th><th>Ward</th><th>Status</th><th>Admitted</th><th></th></tr></thead>
+              <tbody>
+                @for (p of patients(); track p.patientId) {
+                  <tr>
+                    <td class="fw-medium">{{p.patientId}}</td>
+                    <td>{{p.citizenId}}</td>
+                    <td>{{citizenName(p.citizenId)}}</td>
+                    <td class="text-muted">{{p.ward || '—'}}</td>
+                    <td><span class="badge" [ngClass]="statusClass(p.status)">{{p.status}}</span></td>
+                    <td class="text-muted">{{p.admissionDate || p.createdAt | date:'MMM d'}}</td>
+                    <td>
+                      <button class="btn btn-xs btn-outline-primary" (click)="selectPatient(p)">
+                        <i class="bi bi-eye"></i> View
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Patient detail -->
+    <div class="col-lg-5">
+      @if (selectedPatient()) {
+        <div class="section-card mb-3">
+          <div class="section-card-title d-flex justify-content-between">
+            <span><i class="bi bi-person-badge me-2 text-primary-cc"></i>{{citizenName(selectedPatient()!.citizenId)}}</span>
+            <button class="icon-btn" (click)="selectedPatient.set(null)"><i class="bi bi-x"></i></button>
+          </div>
+          <div class="patient-detail">
+            <div class="detail-row"><span>Status</span><span class="badge" [ngClass]="statusClass(selectedPatient()!.status)">{{selectedPatient()!.status}}</span></div>
+            <div class="detail-row"><span>Ward</span><span>{{selectedPatient()!.ward || '—'}}</span></div>
+            <div class="detail-row"><span>Notes</span><span style="font-size:12px">{{selectedPatient()!.notes || '—'}}</span></div>
+            <div class="detail-row"><span>Admitted</span><span>{{selectedPatient()!.admissionDate || selectedPatient()!.createdAt | date:'MMM d, y'}}</span></div>
+            @if (selectedPatient()!.status === 'DISCHARGED') {
+              <div class="detail-row"><span>Discharged</span><span>{{selectedPatient()!.dischargeDate || selectedPatient()!.updatedAt | date:'MMM d, y'}}</span></div>
+            }
+          </div>
+          @if (selectedPatient()!.status !== 'DISCHARGED') {
+          <div class="mt-3 d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-outline-secondary" (click)="updateStatus(selectedPatient()!.patientId, 'UNDER_OBSERVATION')">Observation</button>
+            <button class="btn btn-sm btn-success" (click)="updateStatus(selectedPatient()!.patientId, 'STABLE')">Stable</button>
+          </div>
+          }
+        </div>
+
+        <!-- Patient treatments -->
+        @if (patientTreatments().length > 0) {
+          <div class="section-card mb-3">
+            <div class="section-card-title"><i class="bi bi-clipboard2-pulse me-2 text-primary-cc"></i>Treatments</div>
+            @for (t of patientTreatments(); track t.treatmentId) {
+              <div class="treatment-row">
+                <div style="font-size:13px;font-weight:600">{{t.medicationName}} <span class="text-muted fw-normal">— {{t.dosage}}</span></div>
+                <div style="font-size:12px;color:var(--cc-text-muted)">{{t.description}}</div>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                  <span class="badge" [ngClass]="t.status==='ONGOING'?'badge-dispatched':t.status==='COMPLETED'?'badge-active':'badge-inactive'">{{t.status}}</span>
+                  @if (t.status === 'ONGOING') {
+                    <button class="btn btn-xs btn-outline-success" (click)="updateTreatment(t.treatmentId, 'COMPLETED')">Complete</button>
+                    <button class="btn btn-xs btn-outline-danger" (click)="updateTreatment(t.treatmentId, 'CANCELLED')">Cancel</button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Add Treatment -->
+        @if (selectedPatient()!.status !== 'DISCHARGED') {
+        <div class="section-card">
+          <div class="section-card-title"><i class="bi bi-plus-circle me-2 text-success"></i>Add Treatment</div>
+          <input class="form-control mb-2" [(ngModel)]="tForm.description" placeholder="Description">
+          <input class="form-control mb-2" [(ngModel)]="tForm.medicationName" placeholder="Medication name">
+          <input class="form-control mb-3" [(ngModel)]="tForm.dosage" placeholder="Dosage (e.g. 500mg twice daily)">
+          <button class="btn btn-primary btn-sm w-100" (click)="addTreatment()" [disabled]="submitting()">
+            @if (submitting()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Add Treatment
+          </button>
+        </div>
+        }
+      } @else {
+        <div class="section-card text-center py-4">
+          <i class="bi bi-person-badge fs-2 text-muted"></i>
+          <p class="text-muted mt-2 mb-0">Select a patient to view details</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

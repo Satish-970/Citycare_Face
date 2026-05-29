@@ -1,0 +1,44 @@
+.empty-state { text-align:center; padding:2rem; color:var(--cc-text-muted); }
+.health-tips-feed { display:flex; flex-direction:column; gap:.5rem; }
+.health-tip-item { display:flex; align-items:flex-start; gap:.75rem; padding:.6rem .75rem; border-radius:10px; background:var(--cc-bg); transition: all 0.2s ease; }
+.health-tip-item:hover { background:var(--cc-primary-light); transform: translateY(-1px); }
+.health-tip-icon { font-size:1rem; margin-top:2px; }
+.modal-backdrop-custom { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1055; display:flex; align-items:center; justify-content:center; padding:1rem; }
+.modal-card { background:#fff; border-radius:16px; width:100%; max-width:480px; box-shadow:var(--cc-shadow-md); overflow:hidden; }
+.modal-card-header { padding:1rem 1.25rem; border-bottom:1px solid var(--cc-border); display:flex; align-items:center; justify-content:space-between; font-weight:600; }
+.modal-card-body { padding:1.25rem; }
+.icon-btn { background:none; border:none; cursor:pointer; padding:.25rem; border-radius:6px; color:var(--cc-text-muted); }
+
+.report-btn:disabled {
+  pointer-events: auto;
+  cursor: not-allowed;
+}
+.report-btn[data-tooltip] {
+  position: relative;
+}
+.report-btn[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #1e293b;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  padding: .4rem .75rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  z-index: 999;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+.report-btn[data-tooltip]:hover::before {
+  content: '';
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 16px;
+  border: 6px solid transparent;
+  border-bottom-color: #1e293b;
+  z-index: 999;
+  pointer-events: none;
+}

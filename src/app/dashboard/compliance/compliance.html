@@ -1,0 +1,270 @@
+<div class="fade-in-up">
+  <div class="page-header">
+    <h2>Compliance Center</h2>
+    <p>Manage records and audits</p>
+  </div>
+
+  <!-- Compliance Records -->
+  @if (tab()==='records') {
+    <div class="section-card">
+      <div class="section-card-title d-flex justify-content-between align-items-center">
+        <span>Compliance Records</span>
+        <button class="btn btn-sm btn-primary" (click)="showRecModal.set(true)"><i class="bi bi-plus me-1"></i>New Record</button>
+      </div>
+      @if (loading()) {
+        <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary-cc"></div></div>
+      } @else if (records().length === 0) {
+        <div class="text-center py-4 text-muted"><i class="bi bi-file-earmark-x fs-3 d-block mb-2"></i>No compliance records found.</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead><tr><th>Entity ID</th><th>Type</th><th>Result</th><th>Audited By</th><th>Notes</th><th>Date</th></tr></thead>
+            <tbody>
+              @for (r of records(); track r.complianceId) {
+                <tr>
+                  <td>{{r.entityId}}</td>
+                  <td>{{r.type}}</td>
+                  <td><span class="badge" [ngClass]="r.result==='COMPLIANT'?'badge-compliant':r.result==='UNDER_REVIEW'?'badge-dispatched':'badge-noncompliant'">{{r.result}}</span></td>
+                  <td>{{r.officerName || 'Officer'}}</td>
+                  <td class="text-muted notes-td">
+                    @if (!r.notes) { <span>—</span> }
+                    @else if (r.notes.length <= 30) { <span>{{r.notes}}</span> }
+                    @else {
+                      <span>{{expandedNotes().has(r.complianceId) ? r.notes : r.notes.substring(0, 30) + '...'}}</span>
+                      <span class="show-more-btn" (click)="toggleNote(r.complianceId)">{{expandedNotes().has(r.complianceId) ? ' Show less' : ' Show more'}}</span>
+                    }
+                  </td>
+                  <td class="text-muted">{{r.createdAt | date:'MMM d'}}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Audits -->
+  @if (tab()==='audits') {
+    <div class="section-card">
+      <div class="section-card-title d-flex justify-content-between align-items-center">
+        <span>Audits</span>
+        <button class="btn btn-sm btn-primary" (click)="showAuditModal.set(true)"><i class="bi bi-plus me-1"></i>New Audit</button>
+      </div>
+      @if (loading()) {
+        <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary-cc"></div></div>
+      } @else if (audits().length === 0) {
+        <div class="text-center py-4 text-muted"><i class="bi bi-clipboard2-x fs-3 d-block mb-2"></i>No audits found.</div>
+      } @else {
+        <div class="audit-list">
+          @for (a of audits(); track a.auditId) {
+            <div class="audit-item">
+              <div class="audit-icon"><i class="bi bi-clipboard2-check-fill"></i></div>
+              <div class="audit-info">
+                <div class="fw-medium" style="font-size:13px">{{a.scope || 'Audit'}}</div>
+                <div class="text-muted" style="font-size:12px">Officer: {{a.officerName || 'N/A'}} | Date: {{a.date | date:'MMM d, y'}}</div>
+                @if (a.findings) {
+                  <div class="audit-findings">
+                    <span>{{expandedNotes().has(a.auditId) ? a.findings : a.findings.substring(0, 60) + (a.findings.length > 60 ? '...' : '')}}</span>
+                    @if (a.findings.length > 60) {
+                      <span class="show-more-btn" (click)="toggleNote(a.auditId)">{{expandedNotes().has(a.auditId) ? ' Show less' : ' Show more'}}</span>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="ms-auto d-flex flex-column align-items-end gap-1">
+                <span class="badge" [ngClass]="auditStatusClass(a.status)">{{a.status}}</span>
+                <div class="d-flex gap-1">
+                  @if (a.status === 'SCHEDULED') {
+                    <button class="btn btn-xs btn-outline-primary" (click)="startAudit(a.auditId)">Start</button>
+                    <button class="btn btn-xs btn-outline-danger" (click)="cancelAudit(a.auditId)">Cancel</button>
+                  }
+                  @if (a.status === 'IN_PROGRESS') {
+                    <button class="btn btn-xs btn-outline-success" (click)="openComplete(a)">Complete</button>
+                    <button class="btn btn-xs btn-outline-danger" (click)="cancelAudit(a.auditId)">Cancel</button>
+                  }
+                  @if (a.status === 'COMPLETED') {
+                    <span class="text-muted" style="font-size:11px">Completed</span>
+                  }
+                  @if (a.status === 'CANCELLED') {
+                    <span class="text-muted" style="font-size:11px">Cancelled</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Audit Logs -->
+  @if (tab()==='logs') {
+    <div class="section-card">
+      <div class="section-card-title"><i class="bi bi-journal-text me-2 text-primary-cc"></i>Audit Logs</div>
+      @if (logs().length === 0) {
+        <div class="text-center py-4 text-muted"><i class="bi bi-journal-x fs-3 d-block mb-2"></i>No logs found.</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead><tr><th>User ID</th><th>User Name</th><th>Action</th><th>Resource</th><th>Time</th></tr></thead>
+            <tbody>
+              @for (l of logs(); track l.logId) {
+                <tr>
+                  <td class="text-muted">{{l.userId}}</td>
+                  <td class="fw-medium">{{l.userName || '-'}}</td>
+                  <td class="fw-medium">{{l.action}}</td>
+                  <td class="text-muted">{{l.resource}}</td>
+                  <td class="text-muted">{{l.timestamp | date:'MMM d, HH:mm'}}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- New Record Modal -->
+  @if (showRecModal()) {
+    <div class="modal-backdrop-custom" (click)="showRecModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header"><span>New Compliance Record</span><button class="icon-btn" (click)="showRecModal.set(false)"><i class="bi bi-x-lg"></i></button></div>
+        <div class="modal-card-body">
+
+          <div class="mb-2">
+            <select class="form-select" [(ngModel)]="rForm.type" (change)="onEntityTypeChange()" required>
+              <option value="">Entity type</option>
+              <option value="FACILITY">Facility</option>
+              <option value="PATIENT">Patient</option>
+              <option value="EMERGENCY">Emergency</option>
+            </select>
+          </div>
+
+          <div class="mb-2">
+            @if (rForm.type && ((rForm.type === 'FACILITY' && facilities().length > 0) || (rForm.type === 'PATIENT' && patients().length > 0) || (rForm.type === 'EMERGENCY' && emergencies().length > 0))) {
+              <select class="form-select" [(ngModel)]="rForm.entityId" required>
+                <option value="">Select {{rForm.type.toLowerCase()}}</option>
+                @if (rForm.type === 'FACILITY') {
+                  @for (facility of facilities(); track facility.facilityId) {
+                    <option [value]="facility.facilityId">
+                      {{facility.facilityId}} - {{facility.name}}
+                    </option>
+                  }
+                }
+                @if (rForm.type === 'PATIENT') {
+                  @for (patient of patients(); track patient.patientId) {
+                    <option [value]="patient.patientId">
+                      {{patient.patientId}} - {{patient.ward || 'Ward'}} ({{patient.status}})
+                    </option>
+                  }
+                }
+                @if (rForm.type === 'EMERGENCY') {
+                  @for (emergency of emergencies(); track emergency.emergencyId) {
+                    <option [value]="emergency.emergencyId">
+                      {{emergency.emergencyId}} - {{emergency.description}}
+                    </option>
+                  }
+                }
+              </select>
+            } @else if (rForm.type) {
+              <input class="form-control" type="number" min="1" step="1"
+                [(ngModel)]="rForm.entityId"
+                placeholder="Entity ID"
+                (keydown)="$event.key === '.' || $event.key === '-' || $event.key === 'e' ? $event.preventDefault() : null"
+                required>
+            } @else {
+              <input class="form-control" type="number" min="1" step="1"
+                [(ngModel)]="rForm.entityId"
+                placeholder="Select entity type first"
+                disabled
+                required>
+            }
+          </div>
+
+          <div class="mb-2">
+            <select class="form-select" [(ngModel)]="rForm.result" required>
+              <option value="">Result</option>
+              <option value="COMPLIANT">Compliant</option>
+              <option value="NON_COMPLIANT">Non-Compliant</option>
+             </select>
+          </div>
+
+          <div class="mb-3">
+            <textarea class="form-control desc-box" [(ngModel)]="rForm.notes" placeholder="Notes (optional, max 350 chars)" maxlength="350"></textarea>
+            <div class="char-hint" [class.text-danger]="rForm.notes.length > 350">{{rForm.notes.length}} / 350</div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary flex-fill" (click)="createRecord()" [disabled]="submitting()">
+              @if(submitting()){<span class="spinner-border spinner-border-sm me-1"></span>} Create Record
+            </button>
+            <button class="btn btn-outline-secondary" (click)="showRecModal.set(false)">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- New Audit Modal -->
+  @if (showAuditModal()) {
+    <div class="modal-backdrop-custom" (click)="showAuditModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header">
+          <span>Create Audit</span>
+          <button class="icon-btn" (click)="showAuditModal.set(false)"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-card-body">
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Audit Scope</label>
+            <input class="form-control" [(ngModel)]="auditForm.scope" placeholder="e.g. Fire Safety - Ward A">
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Schedule Date</label>
+            <input class="form-control" 
+                   type="date" 
+                   [(ngModel)]="auditForm.date" 
+                   [min]="today" 
+                   [max]="maxdate">
+            <div class="small text-muted mt-1">Select a date between today and the next 30 days.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Initial Findings</label>
+            <textarea class="form-control desc-box" [(ngModel)]="auditForm.findings" placeholder="Optional notes..." maxlength="350"></textarea>
+            <div class="char-hint">{{auditForm.findings.length}} / 350</div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary flex-fill" (click)="createAudit()" [disabled]="submitting()">
+              @if(submitting()){<span class="spinner-border spinner-border-sm me-1"></span>} Create Audit
+            </button>
+            <button class="btn btn-outline-secondary" (click)="showAuditModal.set(false)">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Complete Audit Modal -->
+  @if (completeTarget()) {
+    <div class="modal-backdrop-custom" (click)="completeTarget.set(null)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header"><span>Complete Audit - {{completeTarget()!.scope || 'Audit'}}</span><button class="icon-btn" (click)="completeTarget.set(null)"><i class="bi bi-x-lg"></i></button></div>
+        <div class="modal-card-body">
+          <div class="mb-3">
+            <textarea class="form-control desc-box" [(ngModel)]="findings" placeholder="Enter findings and observations (max 350 chars)..." maxlength="350"></textarea>
+            <div class="char-hint" [class.text-danger]="findings.length > 350">{{findings.length}} / 350</div>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success flex-fill" (click)="doCompleteAudit()" [disabled]="submitting()">
+              @if(submitting()){<span class="spinner-border spinner-border-sm me-1"></span>} Mark Completed
+            </button>
+            <button class="btn btn-outline-secondary" (click)="completeTarget.set(null)">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

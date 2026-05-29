@@ -1,0 +1,13 @@
+<div class="cc-toast-wrap">
+  @for (t of toast.toasts(); track t.id) {
+    <div class="cc-toast" [ngClass]="t.type">
+      <i class="bi" [ngClass]="{
+        'bi-check-circle-fill text-success': t.type==='success',
+        'bi-x-circle-fill text-danger':      t.type==='error',
+        'bi-info-circle-fill text-primary-cc':t.type==='info'
+      }"></i>
+      <span>{{t.message}}</span>
+      <button class="btn-close btn-close-sm ms-auto" (click)="toast.remove(t.id)"></button>
+    </div>
+  }
+</div>

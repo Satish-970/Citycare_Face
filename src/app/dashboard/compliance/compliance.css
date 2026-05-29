@@ -1,0 +1,16 @@
+.audit-list { display:flex; flex-direction:column; gap:.75rem; }
+.audit-info { flex:1; min-width:0; }
+.audit-item { display:flex; align-items:flex-start; gap:.85rem; background:var(--cc-bg); border:1px solid var(--cc-border); border-radius:10px; padding:.85rem 1rem; }
+.audit-icon { width:38px; height:38px; background:#ede9fe; color:#6d28d9; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+.audit-findings { font-size:11px; color:var(--cc-text-muted); margin-top:3px; font-style:italic; word-break:break-word; white-space:normal; }
+.btn-xs { font-size:11px; padding:.2rem .55rem; }
+.modal-backdrop-custom { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1055; display:flex; align-items:center; justify-content:center; padding:1rem; }
+.modal-card { background:#fff; border-radius:16px; width:100%; max-width:460px; box-shadow:var(--cc-shadow-md); overflow:hidden; }
+.modal-card-header { padding:1rem 1.25rem; border-bottom:1px solid var(--cc-border); display:flex; align-items:center; justify-content:space-between; font-weight:600; }
+.modal-card-body { padding:1.25rem; }
+.icon-btn { background:none; border:none; cursor:pointer; padding:.25rem; color:var(--cc-text-muted); }
+.desc-box { min-height:120px; max-height:200px; overflow-y:auto; resize:vertical; }
+.char-hint { font-size:11px; color:var(--cc-text-muted); text-align:right; margin-top:3px; }
+.notes-td { width:200px; max-width:200px; white-space:normal; word-break:break-word; vertical-align:top; }
+.show-more-btn { color:var(--cc-primary); cursor:pointer; font-size:11px; font-weight:500; white-space:nowrap; }
+.show-more-btn:hover { text-decoration:underline; }

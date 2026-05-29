@@ -1,0 +1,442 @@
+<div class="fade-in-up">
+  <div class="page-header"><h2>Admin Panel</h2><p>System overview and management</p></div>
+
+  <!-- Overview -->
+  @if (activeTab()==='overview') {
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="metric-card"><div class="metric-icon" style="background:#dbeafe;color:#1d4ed8"><i class="bi bi-building-fill"></i></div><div><div class="metric-label">Facilities</div><div class="metric-value">{{facilities().length}}</div></div></div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="metric-card"><div class="metric-icon" style="background:#d1fae5;color:#065f46"><i class="bi bi-people"></i></div><div><div class="metric-label">Patients</div><div class="metric-value">{{patients().length}}</div></div></div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="metric-card"><div class="metric-icon" style="background:#fee2e2;color:#dc2626"><i class="bi bi-exclamation-triangle"></i></div><div><div class="metric-label">Pending Emg.</div><div class="metric-value">{{emergencies().length}}</div></div></div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="metric-card"><div class="metric-icon" style="background:#fef3c7;color:#92400e"><i class="bi bi-truck"></i></div><div><div class="metric-label">Ambulances</div><div class="metric-value">{{ambulances().length}}</div></div></div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="section-card">
+          <div class="section-card-title"><i class="bi bi-building me-2 text-primary-cc"></i>Facility Status</div>
+          @for (f of facilities().slice(0,5); track f.facilityId) {
+            <div class="facility-row">
+              <div><div style="font-size:13px;font-weight:600">{{f.name}}</div><div style="font-size:11px;color:var(--cc-text-muted)">{{f.type}} · {{f.location}}</div></div>
+              <span class="badge ms-auto" [ngClass]="f.status==='ACTIVE'?'badge-active':'badge-inactive'">{{f.status}}</span>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="section-card">
+          <div class="section-card-title"><i class="bi bi-people me-2 text-primary-cc"></i>Recent Patients</div>
+          @for (p of activePatients(); track p.patientId) {
+            <div class="facility-row">
+              <div><div style="font-size:13px;font-weight:600">{{citizenName(p.citizenId)}}</div><div style="font-size:11px;color:var(--cc-text-muted)">Patient ID {{p.patientId}} · Citizen ID {{p.citizenId}}</div></div>
+              <span class="badge ms-auto" [ngClass]="p.status==='ADMITTED'?'badge-dispatched':p.status==='DISCHARGED'?'badge-closed':'badge-reported'">{{p.status}}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Facilities -->
+  @if (activeTab()==='facilities') {
+    <div class="section-card mb-3">
+      <div class="section-card-title d-flex justify-content-between align-items-center">
+        <span>Facilities</span>
+        <button class="btn btn-sm btn-primary" (click)="showFacModal.set(true)"><i class="bi bi-plus me-1"></i>Add Facility</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Name</th><th>Type</th><th>Address</th><th>Capacity</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            @for (f of facilities(); track f.facilityId) {
+              <tr>
+                <td class="fw-medium">{{f.name}}</td>
+                <td>{{f.type}}</td>
+                <td class="text-muted">{{f.location}}</td>
+                <td>{{f.capacity ?? '—'}}</td>
+                <td><span class="badge" [ngClass]="f.status==='ACTIVE'?'badge-active':'badge-inactive'">{{f.status}}</span></td>
+                <td>
+                  <button class="btn btn-xs btn-outline-danger" (click)="toggleFacStatus(f)">
+                    {{f.status==='ACTIVE'?'Deactivate':'Activate'}}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Patients -->
+  @if (activeTab()==='patients') {
+    <div class="section-card mb-3">
+      <div class="section-card-title d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-truck-front me-2 text-primary-cc"></i>Dispatched Emergencies — Ready to Admit</span>
+        <button class="btn btn-sm btn-outline-secondary" (click)="loadAll()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      @if (dispatched().length === 0) {
+        <div class="text-center py-3 text-muted" style="font-size:13px">No dispatched emergencies</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead><tr><th>Emergency ID</th><th>Citizen ID</th><th>Name</th><th>Type</th><th>Location</th><th>Ambulance</th><th>Action</th></tr></thead>
+            <tbody>
+              @for (e of sortedDispatched(); track e.emergencyId) {
+                <tr>
+                  <td class="fw-medium">{{e.emergencyId}}</td>
+                  <td>{{e.citizenId}}</td>
+                  <td>{{citizenName(e.citizenId)}}</td>
+                  <td>{{e.type}}</td>
+                  <td class="text-muted" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{e.location}}</td>
+                  <td>{{e.ambulance?.vehicleNumber || 'N/A'}}</td>
+                  <td>
+                    <button class="btn btn-xs btn-primary" (click)="openAdmit(e)">
+                      <i class="bi bi-person-plus me-1"></i>Admit
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title"><i class="bi bi-people me-2 text-primary-cc"></i>Active Patients</div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Patient ID</th><th>Citizen ID</th><th>Name</th><th>Ward</th><th>Status</th><th>Date</th><th>Admin Action</th></tr></thead>
+          <tbody>
+            @for (p of activePatients(); track p.patientId) {
+              <tr>
+                <td>{{p.patientId}}</td>
+                <td>{{p.citizenId}}</td>
+                <td>{{citizenName(p.citizenId)}}</td>
+                <td class="text-muted">{{p.ward || '—'}}</td>
+                <td><span class="badge" [ngClass]="p.status==='ADMITTED'?'badge-dispatched':p.status==='DISCHARGED'?'badge-closed':'badge-admitted'">{{p.status}}</span></td>
+                <td class="text-muted">{{p.createdAt | date:'MMM d'}}</td>
+                <td><button class="btn btn-xs btn-outline-danger" (click)="dischargePatient(p.patientId)">Discharge</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-card mt-3">
+      <div class="section-card-title"><i class="bi bi-clock-history me-2 text-primary-cc"></i>Discharged Patients</div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Patient ID</th><th>Citizen ID</th><th>Name</th><th>Ward</th><th>Discharge Date</th></tr></thead>
+          <tbody>
+            @for (p of dischargedPatients(); track p.patientId) {
+              <tr>
+                <td>{{p.patientId}}</td>
+                <td>{{p.citizenId}}</td>
+                <td>{{citizenName(p.citizenId)}}</td>
+                <td class="text-muted">{{p.ward || '—'}}</td>
+                <td class="text-muted">{{p.dischargeDate || p.updatedAt | date:'MMM d'}}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Ambulances -->
+  @if (activeTab()==='ambulances') {
+    <div class="section-card">
+      <div class="section-card-title d-flex justify-content-between align-items-center">
+        <span>All Ambulances</span>
+        <button class="btn btn-sm btn-primary" (click)="showAmbModal.set(true)"><i class="bi bi-plus me-1"></i>Add Ambulance</button>
+      </div>
+      <div class="row g-3 mt-1">
+        @for (a of sortedAmbulances(); track a.ambulanceId) {
+          <div class="col-md-6 col-lg-4">
+            <div class="amb-item">
+              <div class="amb-badge"><i class="bi bi-truck-front-fill"></i></div>
+              <div class="amb-details">
+                <div class="fw-600">{{a.vehicleNumber}}</div>
+                <div class="text-muted" style="font-size:12px">{{a.model || 'Standard Ambulance'}}</div>
+              </div>
+              <div class="ms-auto d-flex flex-column align-items-end gap-1">
+                <span class="badge" [ngClass]="a.status==='AVAILABLE'?'badge-active':a.status==='DISPATCHED'?'badge-dispatched':'badge-inactive'">{{a.status}}</span>
+                <div class="d-flex gap-1">
+                  @if (a.status !== 'AVAILABLE') {
+                    <button class="btn btn-xs btn-outline-success" (click)="changeAmbStatus(a.ambulanceId, 'AVAILABLE')">Available</button>
+                  }
+                  @if (a.status !== 'MAINTENANCE') {
+                    <button class="btn btn-xs btn-outline-warning" (click)="changeAmbStatus(a.ambulanceId, 'MAINTENANCE')">Maintenance</button>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Staff -->
+  @if (activeTab() === 'staff') {
+    <div class="section-card">
+      <div class="section-card-title d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-badge-fill me-2 text-primary-cc"></i>Staff Directory</span>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-secondary" (click)="loadAll()"><i class="bi bi-arrow-clockwise"></i></button>
+          <button class="btn btn-sm btn-primary" (click)="showStaffModal.set(true)"><i class="bi bi-plus me-1"></i>Add Staff</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr><th>Staff ID</th><th>User ID</th><th>Name</th><th>Contact</th><th>Role</th><th>Facility ID</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            @for (s of sortedStaff(); track $index) {
+              <tr>
+                <td>{{s.staffId ?? s.id}}</td>
+                <td>{{s.userId ?? s.staffId ?? s.id}}</td>
+                <td class="fw-medium">{{s.name}}</td>
+                <td class="text-muted">{{s.contactInfo || '—'}}</td>
+                <td><span class="badge badge-dispatched">{{s.role}}</span></td>
+                <td class="text-muted">{{s.facilityId}}</td>
+                <td><span class="badge" [ngClass]="s.status==='ACTIVE'||!s.status?'badge-active':'badge-inactive'">{{s.status||'ACTIVE'}}</span></td>
+                <td>
+                  <button class="btn btn-xs btn-outline-danger" (click)="deleteStaff(s.staffId ?? s.id ?? 0)">Remove</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Users -->
+  @if (activeTab() === 'users') {
+    <div class="section-card">
+      <div class="section-card-title d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people-fill me-2 text-primary-cc"></i>All Users</span>
+        <button class="btn btn-sm btn-outline-secondary" (click)="loadAll()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>User ID</th><th>Name</th><th>Email</th><th>Role</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            @for (u of sortedUsers(); track u.userId) {
+              <tr>
+                <td>{{u.userId}}</td>
+                <td class="fw-medium">{{u.name}}</td>
+                <td class="text-muted">{{u.email}}</td>
+                <td><span class="badge badge-dispatched">{{u.role}}</span></td>
+                <td class="text-muted">{{u.phone || 'N/A'}}</td>
+                <td><span class="badge" [ngClass]="u.status==='ACTIVE'?'badge-active':'badge-inactive'">{{u.status||'ACTIVE'}}</span></td>
+                <td>
+                  <button class="btn btn-xs" [ngClass]="u.status==='ACTIVE'?'btn-outline-danger':'btn-outline-success'" (click)="toggleUserStatus(u)">
+                    {{u.status==='ACTIVE'?'Deactivate':'Activate'}}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Documents -->
+  @if (activeTab() === 'documents') {
+    <div class="section-card">
+      <div class="section-card-title d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-file-earmark-check me-2 text-primary-cc"></i>Citizen Document Approvals</span>
+        <button class="btn btn-sm btn-outline-secondary" (click)="loadAll()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Document ID</th><th>Citizen ID</th><th>Name</th><th>Status</th><th>Uploaded</th><th>Action</th></tr></thead>
+          <tbody>
+            @for (d of sortedDocuments(); track d.documentId) {
+              <tr>
+                <td>{{d.documentId}}</td>
+                <td>{{d.citizenId}}</td>
+                <td class="fw-medium">{{d.citizenName}}</td>
+                <td><span class="badge" [ngClass]="d.verificationStatus==='VERIFIED'?'badge-active':d.verificationStatus==='REJECTED'?'badge-inactive':'badge-reported'">{{d.verificationStatus}}</span></td>
+                <td class="text-muted">{{d.uploadedDate || 'N/A'}}</td>
+                <td>
+                  <button class="btn btn-xs btn-outline-primary" (click)="openDocModal(d)"><i class="bi bi-eye me-1"></i>View</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Document View Modal -->
+  @if (showDocModal()) {
+    <div class="modal-backdrop-custom" (click)="showDocModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header">
+          <span><i class="bi bi-file-earmark-text me-2"></i>Document #{{docTarget()?.documentId}} — {{docTarget()?.citizenName}}</span>
+          <button class="icon-btn" (click)="showDocModal.set(false)"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-card-body">
+          <div class="mb-3 p-2 rounded" style="background:var(--cc-bg);font-size:13px">
+            <div><span class="text-muted">Citizen ID:</span> {{docTarget()?.citizenId}}</div>
+            <div><span class="text-muted">Uploaded:</span> {{docTarget()?.uploadedDate || 'N/A'}}</div>
+            <div><span class="text-muted">Status:</span>
+              <span class="badge ms-1" [ngClass]="docTarget()?.verificationStatus==='VERIFIED'?'badge-active':docTarget()?.verificationStatus==='REJECTED'?'badge-inactive':'badge-reported'">{{docTarget()?.verificationStatus}}</span>
+            </div>
+          </div>
+          <button class="btn btn-outline-secondary w-100 mb-3" (click)="viewDocument()"><i class="bi bi-eye me-1"></i>View Document</button>
+          @if (docTarget()?.verificationStatus === 'PENDING') {
+            <div class="d-flex gap-2">
+              <button class="btn btn-success flex-fill" (click)="verifyDocumentFromModal('VERIFIED')" [disabled]="submitting()">
+                @if(submitting()){<span class="spinner-border spinner-border-sm me-1"></span>}<i class="bi bi-check-lg me-1"></i>Approve
+              </button>
+              <button class="btn btn-danger flex-fill" (click)="verifyDocumentFromModal('REJECTED')" [disabled]="submitting()">
+                <i class="bi bi-x-lg me-1"></i>Reject
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Add Facility Modal -->
+  @if (showFacModal()) {
+    <div class="modal-backdrop-custom" (click)="showFacModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header"><span>Add Facility</span><button class="icon-btn" (click)="showFacModal.set(false)"><i class="bi bi-x-lg"></i></button></div>
+        <div class="modal-card-body">
+          <div class="mb-2"><input class="form-control" name="facName" [(ngModel)]="fForm.name" placeholder="Facility name"></div>
+          <div class="mb-2">
+            <select class="form-select" name="facType" [(ngModel)]="fForm.type">
+              <option value="">Select type...</option>
+              <option value="HOSPITAL">Hospital</option>
+              <option value="CLINIC">Clinic</option>
+            </select>
+          </div>
+          <div class="mb-2"><input class="form-control" name="facLocation" [(ngModel)]="fForm.location" placeholder="Location / Address"></div>
+          <div class="mb-3"><input class="form-control" name="facCapacity" type="number" [(ngModel)]="fForm.capacity" placeholder="Capacity"></div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary flex-fill" (click)="addFacility()" [disabled]="submitting()">
+              @if(submitting()){<span class="spinner-border spinner-border-sm me-1"></span>} Add Facility
+            </button>
+            <button class="btn btn-outline-secondary" (click)="showFacModal.set(false)">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Add Staff Modal -->
+  @if (showStaffModal()) {
+    <div class="modal-backdrop-custom" (click)="showStaffModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header"><span>Add Staff</span><button class="icon-btn" (click)="showStaffModal.set(false)"><i class="bi bi-x-lg"></i></button></div>
+        <div class="modal-card-body">
+          <div class="mb-2"><input class="form-control" [(ngModel)]="staffForm.name" placeholder="Full name"></div>
+          <div class="mb-2"><input class="form-control" type="email" [(ngModel)]="staffForm.email" placeholder="Email"></div>
+          <div class="mb-2"><input class="form-control" type="password" autocomplete="new-password" [(ngModel)]="staffForm.password" placeholder="Password"></div>
+          <div class="mb-2"><input class="form-control" [(ngModel)]="staffForm.phone" placeholder="Phone"></div>
+          <div class="mb-2">
+            <select class="form-select" [(ngModel)]="staffForm.role">
+              <option value="DOCTOR">Doctor</option>
+              <option value="NURSE">Nurse</option>
+              <option value="DISPATCHER">Dispatcher</option>
+              <option value="COMPLIANCE_OFFICER">Compliance Officer</option>
+            
+            </select>
+          </div>
+          <div class="mb-3">
+            <select class="form-select" [(ngModel)]="staffForm.facilityId">
+              <option [value]="0" disabled>Select facility...</option>
+              @for (f of facilities(); track f.facilityId) {
+                <option [value]="f.facilityId">{{f.name}} ({{f.type}})</option>
+              }
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary flex-fill" (click)="createStaff()" [disabled]="submitting()">
+              @if(submitting()){<span class="spinner-border spinner-border-sm me-1"></span>} Create Staff
+            </button>
+            <button class="btn btn-outline-secondary" (click)="showStaffModal.set(false)">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Admit Patient Modal -->
+  @if (showAdmitModal()) {
+    <div class="modal-backdrop-custom" (click)="showAdmitModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header"><span>Admit Patient — Emergency #{{aForm.emergencyId}}</span><button class="icon-btn" (click)="showAdmitModal.set(false)"><i class="bi bi-x-lg"></i></button></div>
+        <div class="modal-card-body">
+          <div class="mb-2 p-2 rounded" style="background:var(--cc-bg);font-size:13px">
+            <i class="bi bi-geo-alt me-1 text-muted"></i>{{admitTarget()?.location}}
+            <span class="badge badge-dispatched ms-2">{{admitTarget()?.type}}</span>
+          </div>
+          <div class="mb-2"><input class="form-control" [(ngModel)]="aForm.ward" placeholder="Ward (e.g. ICU, General Ward - Bed 12)"></div>
+          <div class="mb-3"><textarea class="form-control" rows="2" [(ngModel)]="aForm.notes" placeholder="Notes..."></textarea></div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary flex-fill" (click)="admitPatient()" [disabled]="submitting()">
+              @if(submitting()){<span class="spinner-border spinner-border-sm me-1"></span>} Admit Patient
+            </button>
+            <button class="btn btn-outline-secondary" (click)="showAdmitModal.set(false)">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Add Ambulance Modal -->
+  @if (showAmbModal()) {
+    <div class="modal-backdrop-custom" (click)="showAmbModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header"><span><i class="bi bi-truck-front me-2"></i>Add Ambulance</span><button class="icon-btn" (click)="showAmbModal.set(false)"><i class="bi bi-x-lg"></i></button></div>
+        <div class="modal-card-body">
+
+          <div class="mb-3">
+            <label class="form-label fw-medium">Vehicle Registration Number <span class="text-danger">*</span></label>
+            <input class="form-control" [(ngModel)]="ambForm.vehicleNumber"
+              placeholder="e.g. TN-01-AB-1234"
+              style="text-transform:uppercase"
+              (input)="ambForm.vehicleNumber = ambForm.vehicleNumber.toUpperCase()">
+            <div class="form-text text-muted">Enter the official vehicle registration number.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-medium">Vehicle Model / Make</label>
+            <input class="form-control" [(ngModel)]="ambForm.model"
+              placeholder="e.g. Tata Winger, Force Traveller">
+            <div class="form-text text-muted">Enter the make and model of the ambulance vehicle.</div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary flex-fill" (click)="addAmbulance()" [disabled]="submitting() || !ambForm.vehicleNumber.trim()">
+              @if(submitting()){<span class="spinner-border spinner-border-sm me-1"></span>}
+              <i class="bi bi-plus-circle me-1"></i>Add Ambulance
+            </button>
+            <button class="btn btn-outline-secondary" (click)="showAmbModal.set(false)">Cancel</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  }
+</div>

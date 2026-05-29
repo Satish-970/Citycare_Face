@@ -1,0 +1,141 @@
+<div class="fade-in-up">
+  <div class="page-header d-flex align-items-center gap-3">
+    <div class="profile-avatar-large">{{initial}}</div>
+    <div>
+      <h2>My Profile</h2>
+      <p>Manage your personal information</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="section-card text-center">
+        <div class="profile-avatar-xl mx-auto mb-3">{{initial}}</div>
+        <h4 class="mb-1" style="font-family:'Sora',sans-serif;font-weight:600">{{user?.name}}</h4>
+        <p class="text-muted mb-2" style="font-size:13px">{{user?.email}}</p>
+        <span class="badge badge-dispatched">{{roleDisplay}}</span>
+        <hr class="my-3" style="border-color:var(--cc-border)">
+        <div class="d-flex justify-content-between" style="font-size:13px">
+          <span class="text-muted">Status</span>
+          <span class="fw-semibold text-success"><i class="bi bi-shield-check me-1"></i>Active</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="section-card">
+        <div class="section-card-title border-bottom pb-3 mb-4">
+          <i class="bi bi-person-lines-fill me-2 text-primary-cc"></i>Personal Information
+        </div>
+
+        @if (loading()) {
+          <div class="text-center py-5"><div class="spinner-border text-primary-cc"></div></div>
+        } @else if (isCitizen) {
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-medium">Full Name</label>
+                <input class="form-control" 
+                       formControlName="name" 
+                       [class.is-invalid]="profileForm.get('name')?.invalid && profileForm.get('name')?.touched">
+                @if (profileForm.get('name')?.errors?.['invalidName'] && profileForm.get('name')?.touched) {
+                  <div class="text-danger mt-1" style="font-size:12px">
+                    <i class="bi bi-exclamation-circle me-1"></i>Name can only contain alphabets and spaces
+                  </div>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-medium">Phone Number <span class="text-muted">(Optional)</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">🇮🇳 +91</span>
+                  <input class="form-control" 
+                         formControlName="contactInfo" 
+                         placeholder="9876543210"
+                         maxlength="10"
+                         [class.is-invalid]="profileForm.get('contactInfo')?.invalid && profileForm.get('contactInfo')?.touched && profileForm.get('contactInfo')?.value">
+                </div>
+                @if (profileForm.get('contactInfo')?.errors?.['invalidPhone'] && profileForm.get('contactInfo')?.touched && profileForm.get('contactInfo')?.value) {
+                  <div class="text-danger mt-1" style="font-size:12px">
+                    <i class="bi bi-exclamation-circle me-1"></i>Phone must be exactly 10 digits starting with 6, 7, 8, or 9
+                  </div>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-medium">Date of Birth</label>
+                <input class="form-control" 
+                       type="date" 
+                       formControlName="dateOfBirth"
+                       min="1874-01-01"
+                       max="2015-12-31">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-medium">Blood Group</label>
+                <select class="form-select" formControlName="bloodGroup">
+                  <option value="">Select...</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+                @if (bloodGroupQuote) {
+                  <div class="mt-2 p-2 rounded" style="background: rgba(var(--bs-primary-rgb), 0.1); font-size: 13px;">
+                    <span [class]="bloodGroupQuote.color">{{bloodGroupQuote.text}}</span>
+                  </div>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-medium">Gender</label>
+                <select class="form-select" formControlName="gender">
+                  <option value="">Select...</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-medium">Address</label>
+                <textarea class="form-control" 
+                          formControlName="address" 
+                          rows="2" 
+                          placeholder="123 Main St, City"></textarea>
+              </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+              <button type="button" class="btn btn-outline-secondary px-4" (click)="loadProfile()">Reset</button>
+              <button type="submit" class="btn btn-primary px-4" [disabled]="saving()">
+                @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                <i class="bi bi-floppy me-2"></i>Save Changes
+              </button>
+            </div>
+          </form>
+        } @else {
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-medium text-muted">Full Name</label>
+              <div class="form-control-plaintext">{{profileForm.get('name')?.value || '—'}}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium text-muted">Email</label>
+              <div class="form-control-plaintext">{{user?.email || '—'}}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium text-muted">Phone</label>
+              <div class="form-control-plaintext">{{profileForm.get('contactInfo')?.value ? '+91' + profileForm.get('contactInfo')?.value : '—'}}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium text-muted">Role</label>
+              <div class="form-control-plaintext">{{roleDisplay}}</div>
+            </div>
+          </div>
+          <div class="alert alert-info mt-4" style="font-size:13px">
+            <i class="bi bi-info-circle me-2"></i>Profile editing is only available for citizens. Contact your administrator for profile updates.
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

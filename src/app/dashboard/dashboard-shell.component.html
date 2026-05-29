@@ -1,0 +1,62 @@
+<div class="shell-wrap" [ngClass]="themeClass">
+
+  <!-- ── SIDEBAR ──────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <i class="bi bi-heart-pulse-fill"></i>
+        <span class="sidebar-logo-text">CityCare</span>
+      </div>
+    </div>
+
+    <!-- User pill -->
+    <div class="sidebar-user" [routerLink]="user?.role === 'CITIZEN' ? '/dashboard/profile' : null" [style.cursor]="user?.role === 'CITIZEN' ? 'pointer' : 'default'" [title]="user?.role === 'CITIZEN' ? 'Update Profile' : ''">
+      <div class="user-avatar">{{userInitial}}</div>
+      <div class="user-info">
+        <div class="user-name">{{user?.name}}</div>
+        <div class="user-role">{{roleLabel}}</div>
+      </div>
+      @if (user?.role === 'CITIZEN') {
+        <i class="bi bi-chevron-right ms-auto text-muted" style="font-size: 12px;"></i>
+      }
+    </div>
+
+    <!-- Nav items -->
+    <nav class="sidebar-nav">
+      @for (item of visibleNav; track item.label) {
+        <a class="nav-item" [routerLink]="item.route" [queryParams]="item.queryParams || {}"
+           routerLinkActive="active"
+           [routerLinkActiveOptions]="{ exact: !item.queryParams }"
+           [title]="item.label">
+          <i class="bi" [class]="item.icon"></i>
+          <span class="nav-label">{{item.label}}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="nav-item text-danger-soft w-100" (click)="logout()">
+        <i class="bi bi-box-arrow-left"></i>
+        <span class="nav-label">Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ─────────────────────────────────────────────────────── -->
+  <div class="main-wrap">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-title">{{pageTitle}}</div>
+
+      <div class="topbar-right">
+        <div class="topbar-avatar" [routerLink]="user?.role === 'CITIZEN' ? '/dashboard/profile' : null" [style.cursor]="user?.role === 'CITIZEN' ? 'pointer' : 'default'" [title]="user?.role === 'CITIZEN' ? 'My Profile' : user?.name">{{userInitial}}</div>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="page-content">
+      <router-outlet/>
+    </main>
+  </div>
+</div>

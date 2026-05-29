@@ -1,0 +1,171 @@
+<div class="fade-in-up">
+  <div class="page-header d-flex align-items-start justify-content-between">
+    <div><h2>Dispatch Control</h2><p>Manage emergency dispatch operations</p></div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="loadAll()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </button>
+  </div>
+
+  <!-- Metrics -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#fee2e2;color:#dc2626"><i class="bi bi-exclamation-circle"></i></div>
+        <div>
+          <div class="metric-label">Pending</div>
+          <div class="metric-value">{{pending().length}}</div>
+          <div class="metric-sub">Awaiting dispatch</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#dbeafe;color:#1d4ed8"><i class="bi bi-truck-front"></i></div>
+        <div>
+          <div class="metric-label">Dispatched</div>
+          <div class="metric-value">{{dispatched().length}}</div>
+          <div class="metric-sub">Active responses</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#d1fae5;color:#065f46"><i class="bi bi-truck"></i></div>
+        <div>
+          <div class="metric-label">Available</div>
+          <div class="metric-value">{{availableAmbs().length}}</div>
+          <div class="metric-sub">Ready to deploy</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#fef3c7;color:#92400e"><i class="bi bi-clock-history"></i></div>
+        <div>
+          <div class="metric-label">Active Cases</div>
+          <div class="metric-value">{{pending().length + dispatched().length}}</div>
+          <div class="metric-sub">In dispatch flow</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Pending emergencies -->
+    <div class="col-lg-8">
+      <div class="section-card">
+        <div class="section-card-title d-flex align-items-center gap-2">
+          <span class="live-dot"></span>
+          <span>Pending Emergencies</span>
+        </div>
+        @if (loading()) {
+          <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary-cc"></div></div>
+        } @else if (pending().length === 0) {
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>
+            No pending emergencies
+          </div>
+        } @else {
+          <div class="emergency-list">
+            @for (e of pending(); track e.emergencyId) {
+              <div class="emergency-card-item">
+                <div class="emg-type-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div class="emg-info">
+                  <div class="emg-title">#{{e.emergencyId}} — {{e.type}}</div>
+                  <div class="emg-location">Citizen ID {{e.citizenId}} · {{citizenName(e.citizenId)}}</div>
+                  <div class="emg-location"><i class="bi bi-geo-alt me-1"></i>{{e.location}}</div>
+                  @if (e.description) { <div class="emg-desc">{{e.description}}</div> }
+                </div>
+                <div class="emg-actions">
+                  <button class="btn btn-sm btn-primary" (click)="openDispatch(e)">
+                    <i class="bi bi-truck-front me-1"></i>Dispatch
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Dispatched -->
+      <div class="section-card mt-3">
+        <div class="section-card-title"><i class="bi bi-truck-front me-2 text-primary-cc"></i>Active Dispatches</div>
+        @if (dispatched().length === 0) {
+          <div class="text-center py-3 text-muted" style="font-size:13px">No active dispatches</div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Emergency ID</th><th>Citizen ID</th><th>Name</th><th>Type</th><th>Location</th><th>Ambulance</th></tr></thead>
+              <tbody>
+                @for (e of dispatched(); track e.emergencyId) {
+                  <tr>
+                    <td>{{e.emergencyId}}</td>
+                    <td>{{e.citizenId}}</td>
+                    <td>{{citizenName(e.citizenId)}}</td>
+                    <td>{{e.type}}</td>
+                    <td class="text-muted">{{e.location}}</td>
+                    <td>{{e.ambulance?.vehicleNumber || 'N/A'}}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Available ambulances -->
+    <div class="col-lg-4">
+      <div class="section-card">
+        <div class="section-card-title"><i class="bi bi-truck me-2 text-success"></i>Available Ambulances</div>
+        @if (availableAmbs().length === 0) {
+          <div class="text-center py-3 text-muted" style="font-size:13px">No ambulances available</div>
+        } @else {
+          @for (a of availableAmbs(); track a.ambulanceId) {
+            <div class="amb-card">
+              <div class="amb-icon"><i class="bi bi-truck"></i></div>
+              <div>
+                <div class="amb-num">{{a.vehicleNumber}}</div>
+                <div class="amb-model">{{a.model || 'Ambulance'}}</div>
+              </div>
+              <span class="badge badge-active ms-auto">Available</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Dispatch modal -->
+  @if (showDispatch()) {
+    <div class="modal-backdrop-custom" (click)="showDispatch.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header">
+          <span>Dispatch Ambulance — Emergency #{{dispatchTarget()?.emergencyId}}</span>
+          <button class="icon-btn" (click)="showDispatch.set(false)"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-card-body">
+          <p class="text-muted mb-3" style="font-size:13px">
+            <i class="bi bi-geo-alt me-1"></i>{{dispatchTarget()?.location}}
+          </p>
+          <div class="mb-3">
+            <label class="form-label fw-medium">Select Ambulance</label>
+            <select class="form-select" [(ngModel)]="selectedAmbId">
+              <option [ngValue]="null" disabled>Choose ambulance...</option>
+              @for (a of availableAmbs(); track a.ambulanceId) {
+                <option [ngValue]="a.ambulanceId">{{a.vehicleNumber}} — {{a.model || 'Ambulance'}}</option>
+              }
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary flex-fill" (click)="confirmDispatch()" [disabled]="selectedAmbId === null || submitting()">
+              @if (submitting()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              <i class="bi bi-truck-front me-1"></i>Dispatch Now
+            </button>
+            <button class="btn btn-outline-secondary" (click)="showDispatch.set(false)">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

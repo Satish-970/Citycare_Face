@@ -1,0 +1,165 @@
+ 
+<div class="login-page">
+
+  <!-- LEFT: Image Panel -->
+  <div class="login-image-side">
+    <div class="login-image-content">
+      <div style="margin-bottom:.75rem">
+        <i class="bi bi-heart-pulse-fill" style="font-size:2.5rem;color:#fff;opacity:.9"></i>
+      </div>
+      <h1>CityCare</h1>
+      <p>Urban Healthcare &amp; Emergency Medical Response — connecting citizens, doctors, and dispatchers in real time.</p>
+      
+    </div>
+  </div>
+
+  <!-- RIGHT: Form Panel -->
+  <div class="login-form-side">
+    <div class="login-form-box">
+
+      <div class="login-logo">
+        <i class="bi bi-heart-pulse-fill"></i>
+        <span>CityCare</span>
+      </div>
+
+      <div class="login-heading">{{tab === 'login' ? 'Welcome back' : 'Register with CityCare'}}</div>
+      <div class="login-subheading">{{tab === 'login' ? 'Sign in to your CityCare account' : 'Join our healthcare community today'}}</div>
+
+      <!-- Tab Switch -->
+      <div class="tab-switch">
+        <button [class.active]="tab==='login'" (click)="tab='login'; loginError=''; registerError=''">Sign In</button>
+        <button [class.active]="tab==='register'" (click)="tab='register'; loginError=''; registerError=''">Register</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      @if (tab === 'login') {
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+          <div class="mb-3">
+            <label class="form-label">Email address</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input type="email" class="form-control border-start-0"
+                     formControlName="email"
+                     placeholder="you@citycare.com" autocomplete="username">
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input [type]="showPass ? 'text' : 'password'"
+                     class="form-control border-start-0 border-end-0"
+                     formControlName="password"
+                     placeholder="••••••••" autocomplete="current-password">
+              <button type="button" class="input-group-text" (click)="showPass=!showPass">
+                <i class="bi" [class.bi-eye-slash]="showPass" [class.bi-eye]="!showPass"></i>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 login-btn" [disabled]="isLoading || loginForm.invalid">
+            @if (isLoading) { <span class="spinner-border spinner-border-sm me-2"></span> Signing in... }
+            @else { <i class="bi bi-box-arrow-in-right me-2"></i>Sign in }
+          </button>
+        </form>
+      }
+
+      <!-- REGISTER FORM -->
+      @if (tab === 'register') {
+        <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+          <div class="mb-2">
+            <label class="form-label">Full Name</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input type="text" class="form-control border-start-0" 
+                     formControlName="name" 
+                     placeholder="John Doe"
+                     [class.is-invalid]="registerForm.get('name')?.invalid && registerForm.get('name')?.touched">
+            </div>
+            @if (registerForm.get('name')?.errors?.['invalidName'] && registerForm.get('name')?.touched) {
+              <div class="text-danger mt-1" style="font-size:11px">
+                <i class="bi bi-exclamation-circle me-1"></i>Name can only contain alphabets and spaces
+              </div>
+            }
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Email address</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input type="email" class="form-control border-start-0" formControlName="email" placeholder="you@citycare.com">
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Phone Number</label>
+            <div class="input-group">
+              <select class="form-select" formControlName="countryCode" style="max-width:90px; border-right:none; font-size:13px;">
+                <option value="+91">🇮🇳 +91</option>
+              </select>
+              <input type="tel" class="form-control" 
+                     formControlName="phone" 
+                     placeholder="9876543210"
+                     maxlength="10"
+                     [class.is-invalid]="registerForm.get('phone')?.invalid && registerForm.get('phone')?.touched">
+            </div>
+            @if (registerForm.get('phone')?.errors?.['invalidPhone'] && registerForm.get('phone')?.touched) {
+              <div class="text-danger mt-1" style="font-size:11px">
+                <i class="bi bi-exclamation-circle me-1"></i>Phone must be exactly 10 digits, starting from 6-9 .
+              </div>
+            }
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input [type]="showPass ? 'text' : 'password'"
+                     class="form-control border-start-0 border-end-0"
+                     formControlName="password" 
+                     placeholder="••••••••" 
+                     autocomplete="new-password"
+                     [class.is-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+              <button type="button" class="input-group-text" (click)="showPass=!showPass">
+                <i class="bi" [class.bi-eye-slash]="showPass" [class.bi-eye]="!showPass"></i>
+              </button>
+            </div>
+            @if (registerForm.get('password')?.errors?.['weakPassword'] && registerForm.get('password')?.touched) {
+              <div class="text-danger mt-1" style="font-size:11px">
+                <i class="bi bi-exclamation-circle me-1"></i>8+ chars, 1 uppercase, 1 special character required
+              </div>
+            }
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirm Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+              <input [type]="showPass ? 'text' : 'password'"
+                     class="form-control border-start-0 border-end-0"
+                     formControlName="confirmPassword" placeholder="••••••••" autocomplete="new-password">
+              <button type="button" class="input-group-text" (click)="showPass=!showPass">
+                <i class="bi" [class.bi-eye-slash]="showPass" [class.bi-eye]="!showPass"></i>
+              </button>
+            </div>
+            @if (registerForm.get('confirmPassword')?.value && registerForm.get('password')?.value !== registerForm.get('confirmPassword')?.value) {
+              <div class="text-danger mt-1" style="font-size:11px"><i class="bi bi-exclamation-circle me-1"></i>Passwords do not match</div>
+            }
+          </div>
+          <button type="submit" class="btn btn-primary w-100 login-btn" [disabled]="isLoading || registerForm.invalid">
+            @if (isLoading) { <span class="spinner-border spinner-border-sm me-2"></span> Creating account... }
+            @else { <i class="bi bi-person-plus me-2"></i>Create account }
+          </button>
+        </form>
+      }
+
+      @if (loginError && tab === 'login') {
+        <div class="alert alert-danger mt-3 mb-0 py-2 fade-in-up">
+          <i class="bi bi-exclamation-triangle me-1"></i> {{loginError}}
+        </div>
+      }
+      @if (registerError && tab === 'register') {
+        <div class="alert alert-danger mt-3 mb-0 py-2 fade-in-up">
+          <i class="bi bi-exclamation-triangle me-1"></i> {{registerError}}
+        </div>
+      }
+
+    </div>
+  </div>
+
+</div>

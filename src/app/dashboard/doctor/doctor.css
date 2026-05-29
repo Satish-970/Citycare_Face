@@ -1,0 +1,8 @@
+.patient-detail { display:flex;flex-direction:column;gap:.4rem; }
+.detail-row { display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:.3rem 0;border-bottom:1px solid var(--cc-border); }
+.detail-row:last-child { border-bottom:none; }
+.detail-row span:first-child { color:var(--cc-text-muted);font-weight:500; }
+.treatment-row { padding:.6rem 0;border-bottom:1px solid var(--cc-border); }
+.treatment-row:last-child { border-bottom:none; }
+.btn-xs { font-size:11px;padding:.2rem .55rem; }
+.icon-btn { background:none;border:none;cursor:pointer;padding:.25rem;color:var(--cc-text-muted); }

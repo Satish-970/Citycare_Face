@@ -1,0 +1,220 @@
+<div class="fade-in-up">
+
+  <!-- Header -->
+  <div class="page-header d-flex align-items-start justify-content-between flex-wrap gap-2">
+    <div>
+      <h2>My Health Dashboard</h2>
+      <p>Welcome back, {{user?.name}}. Your health at a glance.</p>
+    </div>
+    <button class="btn btn-danger px-3 report-btn" (click)="openEmergencyModal()" [disabled]="!isVerified()"
+            [attr.data-tooltip]="!isVerified() ? 'Verify your identity document first to report an emergency.' : null">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>Report Emergency
+    </button>
+  </div>
+
+  <!-- Metric cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#fee2e2; color:#dc2626">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <div>
+          <div class="metric-label">My Emergencies</div>
+          <div class="metric-value">{{emergencies().length}}</div>
+          <div class="metric-sub">Total reported</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#dbeafe; color:#1d4ed8">
+          <i class="bi bi-activity"></i>
+        </div>
+        <div>
+          <div class="metric-label">Active Cases</div>
+          <div class="metric-value">{{activeCount}}</div>
+          <div class="metric-sub">In progress</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#d1fae5; color:#065f46">
+          <i class="bi bi-heart-pulse"></i>
+        </div>
+        <div>
+          <div class="metric-label">Health Tips</div>
+          <div class="metric-value">{{healthTips().length}}</div>
+          <div class="metric-sub">Available tips</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#ede9fe; color:#6d28d9">
+          <i class="bi bi-shield-check"></i>
+        </div>
+        <div>
+          <div class="metric-label">Verification</div>
+          <div class="metric-value" style="font-size:16px">{{isVerified() ? 'Verified' : 'Pending'}}</div>
+          <div class="metric-sub">Required to report</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Document verification -->
+    <div class="col-12">
+      <div class="section-card">
+        <div class="section-card-title d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-file-earmark-check me-2 text-primary-cc"></i>Document Verification</span>
+          <span class="badge" [ngClass]="isVerified() ? 'badge-active' : 'badge-reported'">{{isVerified() ? 'VERIFIED' : 'NOT VERIFIED'}}</span>
+        </div>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <input class="form-control" style="max-width:360px" type="file" accept=".jpg,.jpeg,.png,.pdf" (change)="onDocumentSelected($event)">
+          <button class="btn btn-primary" (click)="uploadDocument()" [disabled]="!selectedDocument || uploadingDocument()">
+            @if (uploadingDocument()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Upload Document
+          </button>
+        </div>
+        @if (documents().length === 0) {
+          <div class="text-muted" style="font-size:13px">Upload an identity document and wait for admin approval before reporting emergencies.</div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Document ID</th><th>Status</th><th>Uploaded</th></tr></thead>
+              <tbody>
+                @for (d of documents(); track d.documentId) {
+                  <tr>
+                    <td>{{d.documentId}}</td>
+                    <td><span class="badge" [ngClass]="d.verificationStatus === 'VERIFIED' ? 'badge-active' : d.verificationStatus === 'REJECTED' ? 'badge-inactive' : 'badge-reported'">{{d.verificationStatus}}</span></td>
+                    <td class="text-muted">{{d.uploadedDate || 'N/A'}}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- My emergencies -->
+    <div class="col-lg-7">
+      <div class="section-card">
+        <div class="section-card-title d-flex align-items-center justify-content-between pb-2 border-bottom mb-3">
+          <div class="d-flex align-items-center gap-3">
+            <span><i class="bi bi-exclamation-triangle me-2 text-danger"></i>Emergencies</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-secondary" [class.active]="activeTab()==='active'" (click)="activeTab.set('active')">Active</button>
+              <button class="btn btn-outline-secondary" [class.active]="activeTab()==='history'" (click)="activeTab.set('history')">History</button>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary" (click)="loadEmergencies()">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+
+        @if (loading()) {
+          <div class="text-center py-4">
+            <div class="spinner-border spinner-border-sm text-primary-cc"></div>
+          </div>
+        } @else if (displayedEmergencies().length === 0) {
+          <div class="empty-state">
+            @if (activeTab() === 'active') {
+              <i class="bi bi-check-circle-fill text-success fs-2"></i>
+              <p class="mt-2 mb-0 text-muted">No active emergencies. Stay safe!</p>
+            } @else {
+              <i class="bi bi-clock-history text-muted fs-2"></i>
+              <p class="mt-2 mb-0 text-muted">No emergency history found.</p>
+            }
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr>
+                <th>Type</th><th>Location</th><th>Status</th><th>Date</th>
+              </tr></thead>
+              <tbody>
+                @for (e of displayedEmergencies(); track e.emergencyId) {
+                  <tr>
+                    <td><i class="bi bi-exclamation-circle text-danger me-1"></i>{{e.type}}</td>
+                    <td class="text-muted" style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{e.location}}</td>
+                    <td><span class="badge" [ngClass]="statusClass(e.status)">{{e.status}}</span></td>
+                    <td class="text-muted">{{e.createdAt | date:'MMM d'}}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Health tips -->
+    <div class="col-lg-5">
+      <div class="section-card">
+        <div class="section-card-title"><i class="bi bi-heart-pulse me-2 text-primary-cc"></i>Health Tips</div>
+        <div class="health-tips-feed">
+          @for (tip of healthTips().slice(0,5); track tip.id) {
+            <div class="health-tip-item">
+              <div class="health-tip-icon">
+                <i class="bi bi-{{tip.icon}} {{tip.color}}"></i>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:600">{{tip.title}}</div>
+                <div style="font-size:12px; color:var(--cc-text-muted)">{{tip.message}}</div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Emergency modal -->
+  @if (showModal()) {
+    <div class="modal-backdrop-custom" (click)="showModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-card-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+            <span>Report Emergency</span>
+          </div>
+          <button class="icon-btn" (click)="showModal.set(false)"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-card-body">
+          <div class="mb-3">
+            <label class="form-label fw-medium">Emergency Type</label>
+            <select class="form-select" [(ngModel)]="eForm.type">
+              <option value="">Select type...</option>
+              <option value="HEART_ATTACK">Heart Attack</option>
+              <option value="ACCIDENT">Road Accident</option>
+              <option value="STROKE">Stroke</option>
+              <option value="FIRE">Fire</option>
+              <option value="FALL">Fall / Injury</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-medium">Location</label>
+            <input class="form-control" [(ngModel)]="eForm.location" placeholder="e.g. Gandhipuram Signal, Coimbatore">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-medium">Description</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="eForm.description" placeholder="Describe what is happening..."></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-danger flex-fill" (click)="submitEmergency()" [disabled]="submitting()">
+              @if (submitting()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>Submit Emergency
+            </button>
+            <button class="btn btn-outline-secondary" (click)="showModal.set(false)">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>
